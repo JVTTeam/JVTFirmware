@@ -1,7 +1,7 @@
 // Firmware for JVT Virtual Touch
 // Berkant Bakışlı & Eren Taşdemir
 
-#define serial Serial
+#define serial Serial1
 
 #define DIN 3
 #define CLK 4
@@ -22,23 +22,23 @@
 #define SW_CH10 0b0000000000000100
 #define SW_BASE1 0b0000000000000010
 #define SW_BASE2 0b0000000000000001
-#define SW_CATHODIC 0b1010000000000000
-#define SW_ANODIC 0b0101000000000000
+#define SW_CATHODIC 0b0101000000000000
+#define SW_ANODIC 0b1010000000000000
 
-#define THUMB_DISTAL (SW_CATHODIC | SW_CH1 | SW_BASE1)
-#define THUMB_PROXIMAL (SW_ANODIC | SW_CH1 | SW_BASE1)
-#define INDEX_DISTAL (SW_CATHODIC | SW_CH2 | SW_BASE1)
-#define INDEX_MIDDLE (SW_ANODIC | SW_CH2 | SW_BASE1)
-#define INDEX_PROXIMAL (SW_ANODIC | SW_CH3 | SW_BASE1)
-#define MIDDLE_DISTAL (SW_CATHODIC | SW_CH4 | SW_BASE1)
-#define MIDDLE_MIDDLE (SW_ANODIC | SW_CH4 | SW_BASE1)
-#define MIDDLE_PROXIMAL (SW_ANODIC | SW_CH5 | SW_BASE1)
-#define RING_DISTAL (SW_CATHODIC | SW_CH6 | SW_BASE2)
-#define RING_MIDDLE (SW_ANODIC | SW_CH6 | SW_BASE2)
-#define RING_PROXIMAL (SW_ANODIC | SW_CH7 | SW_BASE2)
-#define PINKY_DISTAL (SW_CATHODIC | SW_CH8 | SW_BASE2)
-#define PINKY_MIDDLE (SW_ANODIC | SW_CH8 | SW_BASE2)
-#define PINKY_PROXIMAL (SW_ANODIC | SW_CH9 | SW_BASE2)
+#define THUMB_DISTAL (SW_CATHODIC | SW_CH1 | SW_BASE1)   //I
+#define THUMB_PROXIMAL (SW_ANODIC | SW_CH1 | SW_BASE1)   //J
+#define INDEX_DISTAL (SW_CATHODIC | SW_CH2 | SW_BASE1)   //K
+#define INDEX_MIDDLE (SW_ANODIC | SW_CH2 | SW_BASE1)     //L
+#define INDEX_PROXIMAL (SW_ANODIC | SW_CH3 | SW_BASE1)   //M
+#define MIDDLE_DISTAL (SW_CATHODIC | SW_CH4 | SW_BASE1)  //N
+#define MIDDLE_MIDDLE (SW_ANODIC | SW_CH4 | SW_BASE1)    //O
+#define MIDDLE_PROXIMAL (SW_ANODIC | SW_CH5 | SW_BASE1)  //P
+#define RING_DISTAL (SW_CATHODIC | SW_CH6 | SW_BASE2)    //Q
+#define RING_MIDDLE (SW_ANODIC | SW_CH6 | SW_BASE2)      //R
+#define RING_PROXIMAL (SW_ANODIC | SW_CH7 | SW_BASE2)    //S
+#define PINKY_DISTAL (SW_CATHODIC | SW_CH8 | SW_BASE2)   //T
+#define PINKY_MIDDLE (SW_ANODIC | SW_CH8 | SW_BASE2)     //U
+#define PINKY_PROXIMAL (SW_ANODIC | SW_CH9 | SW_BASE2)   //V
 #define PALM1 (SW_CATHODIC | SW_CH10 | SW_BASE1 | SW_BASE2)
 #define PALM2 (SW_ANODIC | SW_CH10 | SW_BASE1 | SW_BASE2)
 
@@ -67,15 +67,13 @@ const uint16_t switch_configurations[ZONE_COUNT] = {
 unsigned long last_loop_time;
 
 void configureSwitch(uint16_t config) {
-  //Ensure timings are correct
   digitalWrite(CLK, LOW);
   shiftOut(DIN, CLK, LSBFIRST, lowByte(config));
   shiftOut(DIN, CLK, LSBFIRST, highByte(config));
 
-  digitalWrite(LE, LOW);
-  delayMicroseconds(1);  //t_WLE 12ns (probably can be removed)
-  digitalWrite(LE, HIGH);
   digitalWrite(CLK, LOW);
+  digitalWrite(LE, LOW);
+  digitalWrite(LE, HIGH);
 }
 
 void setup() {
@@ -83,6 +81,7 @@ void setup() {
   pinMode(CLK, OUTPUT);
   pinMode(LE, OUTPUT);
   pinMode(CLR, OUTPUT);
+  pinMode(A0, OUTPUT);
 
   // Turn all switches off
   digitalWrite(CLR, HIGH);
@@ -91,7 +90,7 @@ void setup() {
   digitalWrite(LE, HIGH);
   digitalWrite(CLR, LOW);
 
-  serial.begin(115200);
+  serial.begin(9600);
   while (!serial)
     ;
 }
@@ -184,6 +183,7 @@ void loop() {
   for (int i = 0; i < ZONE_COUNT; i++) {
     if (strengths[i] > 0) {
       configureSwitch(switch_configurations[i]);
+      delayMicroseconds(10);
       analogWrite(A0, strengths[i]);
       delayMicroseconds(pulse_width);
       analogWrite(A0, 0);
